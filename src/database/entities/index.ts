@@ -1,0 +1,20 @@
+// Index file to export all entities
+export { User } from './user.entity';
+export { Role } from './role.entity';
+export { Permission } from './permission.entity';
+export { RolePermission } from './role-permission.entity';
+export { UserPermission } from './user-permission.entity';
+export { Candidate } from './candidate.entity';
+export { Leader } from './leader.entity';
+export { Corporation } from './corporation.entity';
+export { Voter } from './voter.entity';
+export { Department } from './department.entity';
+export { Municipality } from './municipality.entity';
+export { CandidateVoter } from './candidate-voter.entity';
+export { VotingBooth } from './voting-booth.entity';
+export { VotingTable } from './voting-table.entity';
+export { Organization } from './organizations.entity';
+export { Campaign } from './campaigns.entity';
+export { CampaignUser } from './campaign-user.entity';
+export { VotersHistory } from './voters-history.entity';
+export { Divipol } from './divipol.entity';
