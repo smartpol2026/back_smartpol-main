@@ -1265,12 +1265,17 @@ export class VoterService {
     }
 
     if (filters.votingTableId) {
-      const votingTableId = String(filters.votingTableId).trim();
-      if (votingTableId) {
+      const raw = String(filters.votingTableId).trim();
+      if (raw) {
+        const tableNumber = raw.replace(/\D/g, '') || raw;
         voterIdQuery = voterIdQuery.andWhere(
-          'voter.votingTableId = :votingTableId',
+          `(voter.votingTableId = :votingTableRaw
+            OR voter.votingTableId = :votingTableLabel
+            OR REGEXP_REPLACE(COALESCE(voter.votingTableId, ''), '\\D', '', 'g') = :votingTableNumber)`,
           {
-            votingTableId,
+            votingTableRaw: raw,
+            votingTableLabel: `Mesa ${tableNumber}`,
+            votingTableNumber: tableNumber,
           },
         );
       }
@@ -1444,11 +1449,20 @@ export class VoterService {
       }
 
       if (filters.votingTableId) {
-        const votingTableId = String(filters.votingTableId).trim();
-        if (votingTableId) {
-          query = query.andWhere('voter.votingTableId = :votingTableId', {
-            votingTableId,
-          });
+        const raw = String(filters.votingTableId).trim();
+        if (raw) {
+          const mesaNumber = raw.replace(/\D/g, '') || raw;
+          // Los votantes guardan valores como "Mesa 1", pero el filtro suele llegar como "1"
+          query = query.andWhere(
+            `(voter.votingTableId = :votingTableRaw
+              OR voter.votingTableId = :votingTableLabel
+              OR REGEXP_REPLACE(COALESCE(voter.votingTableId, ''), '\\D', '', 'g') = :votingTableNumber)`,
+            {
+              votingTableRaw: raw,
+              votingTableLabel: `Mesa ${mesaNumber}`,
+              votingTableNumber: mesaNumber,
+            },
+          );
         }
       }
 
@@ -2707,10 +2721,21 @@ export class VoterService {
       });
     }
 
+    // votingTableId del API = número de mesa (1, 2, …). En voters se guarda como "Mesa N".
+    // No se valida contra divipol para no ocultar votantes si falta esa fila.
     if (filters.votingTableId) {
-      query = query.andWhere('voter.votingTableId = :votingTableId', {
-        votingTableId: filters.votingTableId,
-      });
+      const mesaNumber = String(filters.votingTableId).replace(/\D/g, '');
+      if (mesaNumber) {
+        query = query.andWhere(
+          `(voter.votingTableId = :votingTableNumber
+            OR voter.votingTableId = :votingTableLabel
+            OR REGEXP_REPLACE(COALESCE(voter.votingTableId, ''), '\\D', '', 'g') = :votingTableNumber)`,
+          {
+            votingTableNumber: mesaNumber,
+            votingTableLabel: `Mesa ${mesaNumber}`,
+          },
+        );
+      }
     }
 
     const voters = await query.getMany();
