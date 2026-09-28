@@ -15,6 +15,7 @@ import { Municipality } from '../../database/entities/municipality.entity';
 import { VotingBooth } from '../../database/entities/voting-booth.entity';
 import { VotersHistory } from '../../database/entities/voters-history.entity';
 import { Divipol } from '../../database/entities/divipol.entity';
+import { PoliticalStatus } from '../../database/entities/political-status.entity';
 import { CreateVoterDto } from './dto/create-voter.dto';
 import { UpdateVoterDto } from './dto/update-voter.dto';
 import { AssignCandidateDto } from './dto/assign-candidate.dto';
@@ -47,6 +48,8 @@ export class VoterService {
     private readonly votersHistoryRepository: Repository<VotersHistory>,
     @InjectRepository(Divipol)
     private readonly divipolRepository: Repository<Divipol>,
+    @InjectRepository(PoliticalStatus)
+    private readonly politicalStatusRepository: Repository<PoliticalStatus>,
     @Optional()
     private readonly cacheService?: CacheService,
   ) {}
@@ -110,6 +113,20 @@ export class VoterService {
       if (!votingBooth) {
         throw new BadRequestException(
           `Puesto de votación con ID ${createVoterDto.votingBoothId} no encontrado`,
+        );
+      }
+    }
+
+    if (
+      createVoterDto.politicalStatusId !== undefined &&
+      createVoterDto.politicalStatusId !== null
+    ) {
+      const politicalStatus = await this.politicalStatusRepository.findOneBy({
+        id: createVoterDto.politicalStatusId,
+      });
+      if (!politicalStatus) {
+        throw new BadRequestException(
+          `Estado politico con ID ${createVoterDto.politicalStatusId} no encontrado`,
         );
       }
     }
@@ -958,6 +975,20 @@ export class VoterService {
       }
     }
 
+    if (
+      updateVoterDto.politicalStatusId !== undefined &&
+      updateVoterDto.politicalStatusId !== null
+    ) {
+      const politicalStatus = await this.politicalStatusRepository.findOneBy({
+        id: updateVoterDto.politicalStatusId,
+      });
+      if (!politicalStatus) {
+        throw new BadRequestException(
+          `Estado politico con ID ${updateVoterDto.politicalStatusId} no encontrado`,
+        );
+      }
+    }
+
     // Actualizar votante
     await this.voterRepository.update(id, updateVoterDto);
 
@@ -1617,6 +1648,7 @@ export class VoterService {
               votingBoothId: voterInUserOrg.voter.votingBoothId,
               votingTableId: voterInUserOrg.voter.votingTableId,
               politicalStatus: voterInUserOrg.voter.politicalStatus,
+              politicalStatusId: voterInUserOrg.voter.politicalStatusId,
               hasVoted: voterInUserOrg.voter.hasVoted,
             },
             assignedLeader: leader,
@@ -1652,6 +1684,7 @@ export class VoterService {
           votingBoothId: voterHistory.votingBoothId,
           votingTableId: voterHistory.votingTableId,
           politicalStatus: voterHistory.politicalStatus,
+          politicalStatusId: voterHistory.politicalStatusId,
         },
         message: `Datos encontrados en historial de votantes`,
       };
@@ -1739,6 +1772,7 @@ export class VoterService {
               votingBoothId: voterInUserOrg.voter.votingBoothId,
               votingTableId: voterInUserOrg.voter.votingTableId,
               politicalStatus: voterInUserOrg.voter.politicalStatus,
+              politicalStatusId: voterInUserOrg.voter.politicalStatusId,
               hasVoted: voterInUserOrg.voter.hasVoted,
             },
             assignedLeader: leader,
@@ -1784,6 +1818,7 @@ export class VoterService {
             votingBoothId: voter.votingBoothId,
             votingTableId: voter.votingTableId,
             politicalStatus: voter.politicalStatus,
+            politicalStatusId: voter.politicalStatusId,
             hasVoted: voter.hasVoted,
           },
           assignedCandidates: candidates,
@@ -2721,8 +2756,7 @@ export class VoterService {
       });
     }
 
-    // votingTableId del API = número de mesa (1, 2, …). En voters se guarda como "Mesa N".
-    // No se valida contra divipol para no ocultar votantes si falta esa fila.
+
     if (filters.votingTableId) {
       const mesaNumber = String(filters.votingTableId).replace(/\D/g, '');
       if (mesaNumber) {

@@ -1,7 +1,7 @@
 import 'dotenv/config';
 import { DataSource } from 'typeorm';
-import { Department } from './src/database/entities/department.entity';
-import { Municipality } from './src/database/entities/municipality.entity';
+import { Department } from '../src/database/entities/department.entity';
+import { Municipality } from '../src/database/entities/municipality.entity';
 
 const departmentsData = [
   {
@@ -1288,7 +1288,7 @@ async function seedDepartmentsAndMunicipalities() {
   const AppDataSource = new DataSource({
     type: 'postgres',
     host: process.env.DB_HOST || 'localhost',
-    port: parseInt(process.env.DB_PORT || '5236'),
+    port: parseInt(process.env.DB_PORT || '5432', 10),
     username: process.env.DB_USERNAME || 'temp-smartpol_user',
     password: process.env.DB_PASSWORD || 'temp-smartpol_password',
     database: process.env.DB_DATABASE || 'temp-smartpol_db',
@@ -1368,7 +1368,9 @@ async function seedDepartmentsAndMunicipalities() {
   } catch (error) {
     console.error('❌ Error during seeding:', error);
   } finally {
-    await AppDataSource.destroy();
+    if (AppDataSource.isInitialized) {
+      await AppDataSource.destroy();
+    }
   }
 }
 

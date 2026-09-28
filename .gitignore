@@ -1,12 +1,22 @@
-# compiled output
-/dist
-/node_modules
-/build
-backup.sql
+# Dependencies
+node_modules/
+.pnpm-store/
+.yarn/
+.pnp.*
 
+# Build / compiled output
+/dist
+/build
+/out
+*.tsbuildinfo
+
+# Environment & secrets (keep only .env.example)
+.env
+.env.*
+!.env.example
 
 # Logs
-logs
+logs/
 *.log
 npm-debug.log*
 pnpm-debug.log*
@@ -14,45 +24,80 @@ yarn-debug.log*
 yarn-error.log*
 lerna-debug.log*
 
-# OS
-.DS_Store
-
-# Tests
+# Tests & coverage
 /coverage
 /.nyc_output
+*.lcov
+
+# Caches
+.cache/
+.eslintcache
+.prettiercache
+.turbo/
+*.swc
+
+# OS
+.DS_Store
+.AppleDouble
+.LSOverride
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
 
 # IDEs and editors
-/.idea
-.project
-.classpath
-.c9/
-*.launch
-.settings/
-*.sublime-workspace
-
-# IDE - VSCode
+.idea/
 .vscode/*
 !.vscode/settings.json
 !.vscode/tasks.json
 !.vscode/launch.json
 !.vscode/extensions.json
+*.sublime-workspace
+*.sublime-project
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+*.code-workspace
+*.swp
+*.swo
+*~
 
-# dotenv environment variable files
-.env
-.env.development.local
-.env.test.local
-.env.production.local
-.env.local
+# Nest / local tooling
+.nest/
+.webpack/
 
-# temp directory
-.temp
-.tmp
+# Database dumps & backups
+*.sql.gz
+*.dump
+*.bak
+backup.sql
+*.sqlite
+*.sqlite3
+*.db
 
-# Runtime data
-pids
+# Ad-hoc / temp SQL at repo root (formal scripts live in migrations/)
+/temp-*.sql
+/check-*.sql
+/verify-*.sql
+temp-migration.sql
+verify-migration.sql
+check-perms.sql
+
+# Runtime / process
+pids/
 *.pid
 *.seed
 *.pid.lock
+.temp/
+.tmp/
+tmp/
+temp/
 
 # Diagnostic reports (https://nodejs.org/api/report.html)
 report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
+
+# Optional local overrides
+*.local
+docker-compose.override.yml

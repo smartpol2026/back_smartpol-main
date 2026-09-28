@@ -27,6 +27,15 @@ export class CreateCandidateDto {
   number: number;
 
   @ApiProperty({
+    example: '#1D4ED8',
+    description: 'Candidate color (optional)',
+    required: false,
+  })
+  @IsString()
+  @IsOptional()
+  color?: string;
+
+  @ApiProperty({
     example: 1,
     description: 'Corporation ID that the candidate represents (required)',
   })
