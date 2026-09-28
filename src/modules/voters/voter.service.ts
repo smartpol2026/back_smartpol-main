@@ -15,6 +15,7 @@ import { Municipality } from '../../database/entities/municipality.entity';
 import { VotingBooth } from '../../database/entities/voting-booth.entity';
 import { VotersHistory } from '../../database/entities/voters-history.entity';
 import { Divipol } from '../../database/entities/divipol.entity';
+import { PoliticalStatus } from '../../database/entities/political-status.entity';
 import { CreateVoterDto } from './dto/create-voter.dto';
 import { UpdateVoterDto } from './dto/update-voter.dto';
 import { AssignCandidateDto } from './dto/assign-candidate.dto';
@@ -47,6 +48,8 @@ export class VoterService {
     private readonly votersHistoryRepository: Repository<VotersHistory>,
     @InjectRepository(Divipol)
     private readonly divipolRepository: Repository<Divipol>,
+    @InjectRepository(PoliticalStatus)
+    private readonly politicalStatusRepository: Repository<PoliticalStatus>,
     @Optional()
     private readonly cacheService?: CacheService,
   ) {}
@@ -110,6 +113,20 @@ export class VoterService {
       if (!votingBooth) {
         throw new BadRequestException(
           `Puesto de votación con ID ${createVoterDto.votingBoothId} no encontrado`,
+        );
+      }
+    }
+
+    if (
+      createVoterDto.politicalStatusId !== undefined &&
+      createVoterDto.politicalStatusId !== null
+    ) {
+      const politicalStatus = await this.politicalStatusRepository.findOneBy({
+        id: createVoterDto.politicalStatusId,
+      });
+      if (!politicalStatus) {
+        throw new BadRequestException(
+          `Estado politico con ID ${createVoterDto.politicalStatusId} no encontrado`,
         );
       }
     }
@@ -958,6 +975,20 @@ export class VoterService {
       }
     }
 
+    if (
+      updateVoterDto.politicalStatusId !== undefined &&
+      updateVoterDto.politicalStatusId !== null
+    ) {
+      const politicalStatus = await this.politicalStatusRepository.findOneBy({
+        id: updateVoterDto.politicalStatusId,
+      });
+      if (!politicalStatus) {
+        throw new BadRequestException(
+          `Estado politico con ID ${updateVoterDto.politicalStatusId} no encontrado`,
+        );
+      }
+    }
+
     // Actualizar votante
     await this.voterRepository.update(id, updateVoterDto);
 
@@ -1265,12 +1296,17 @@ export class VoterService {
     }
 
     if (filters.votingTableId) {
-      const votingTableId = String(filters.votingTableId).trim();
-      if (votingTableId) {
+      const raw = String(filters.votingTableId).trim();
+      if (raw) {
+        const tableNumber = raw.replace(/\D/g, '') || raw;
         voterIdQuery = voterIdQuery.andWhere(
-          'voter.votingTableId = :votingTableId',
+          `(voter.votingTableId = :votingTableRaw
+            OR voter.votingTableId = :votingTableLabel
+            OR REGEXP_REPLACE(COALESCE(voter.votingTableId, ''), '\\D', '', 'g') = :votingTableNumber)`,
           {
-            votingTableId,
+            votingTableRaw: raw,
+            votingTableLabel: `Mesa ${tableNumber}`,
+            votingTableNumber: tableNumber,
           },
         );
       }
@@ -1444,11 +1480,20 @@ export class VoterService {
       }
 
       if (filters.votingTableId) {
-        const votingTableId = String(filters.votingTableId).trim();
-        if (votingTableId) {
-          query = query.andWhere('voter.votingTableId = :votingTableId', {
-            votingTableId,
-          });
+        const raw = String(filters.votingTableId).trim();
+        if (raw) {
+          const mesaNumber = raw.replace(/\D/g, '') || raw;
+          // Los votantes guardan valores como "Mesa 1", pero el filtro suele llegar como "1"
+          query = query.andWhere(
+            `(voter.votingTableId = :votingTableRaw
+              OR voter.votingTableId = :votingTableLabel
+              OR REGEXP_REPLACE(COALESCE(voter.votingTableId, ''), '\\D', '', 'g') = :votingTableNumber)`,
+            {
+              votingTableRaw: raw,
+              votingTableLabel: `Mesa ${mesaNumber}`,
+              votingTableNumber: mesaNumber,
+            },
+          );
         }
       }
 
@@ -1603,6 +1648,7 @@ export class VoterService {
               votingBoothId: voterInUserOrg.voter.votingBoothId,
               votingTableId: voterInUserOrg.voter.votingTableId,
               politicalStatus: voterInUserOrg.voter.politicalStatus,
+              politicalStatusId: voterInUserOrg.voter.politicalStatusId,
               hasVoted: voterInUserOrg.voter.hasVoted,
             },
             assignedLeader: leader,
@@ -1638,6 +1684,7 @@ export class VoterService {
           votingBoothId: voterHistory.votingBoothId,
           votingTableId: voterHistory.votingTableId,
           politicalStatus: voterHistory.politicalStatus,
+          politicalStatusId: voterHistory.politicalStatusId,
         },
         message: `Datos encontrados en historial de votantes`,
       };
@@ -1725,6 +1772,7 @@ export class VoterService {
               votingBoothId: voterInUserOrg.voter.votingBoothId,
               votingTableId: voterInUserOrg.voter.votingTableId,
               politicalStatus: voterInUserOrg.voter.politicalStatus,
+              politicalStatusId: voterInUserOrg.voter.politicalStatusId,
               hasVoted: voterInUserOrg.voter.hasVoted,
             },
             assignedLeader: leader,
@@ -1770,6 +1818,7 @@ export class VoterService {
             votingBoothId: voter.votingBoothId,
             votingTableId: voter.votingTableId,
             politicalStatus: voter.politicalStatus,
+            politicalStatusId: voter.politicalStatusId,
             hasVoted: voter.hasVoted,
           },
           assignedCandidates: candidates,
@@ -2707,10 +2756,20 @@ export class VoterService {
       });
     }
 
+
     if (filters.votingTableId) {
-      query = query.andWhere('voter.votingTableId = :votingTableId', {
-        votingTableId: filters.votingTableId,
-      });
+      const mesaNumber = String(filters.votingTableId).replace(/\D/g, '');
+      if (mesaNumber) {
+        query = query.andWhere(
+          `(voter.votingTableId = :votingTableNumber
+            OR voter.votingTableId = :votingTableLabel
+            OR REGEXP_REPLACE(COALESCE(voter.votingTableId, ''), '\\D', '', 'g') = :votingTableNumber)`,
+          {
+            votingTableNumber: mesaNumber,
+            votingTableLabel: `Mesa ${mesaNumber}`,
+          },
+        );
+      }
     }
 
     const voters = await query.getMany();

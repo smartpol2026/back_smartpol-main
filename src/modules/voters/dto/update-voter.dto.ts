@@ -159,4 +159,12 @@ export class UpdateVoterDto {
   @IsString()
   @IsOptional()
   politicalStatus?: string;
+
+  @ApiProperty({
+    example: 1,
+    description: 'Political status master ID (optional)',
+  })
+  @IsNumber()
+  @IsOptional()
+  politicalStatusId?: number;
 }

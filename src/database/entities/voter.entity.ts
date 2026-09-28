@@ -16,6 +16,7 @@ import { Department } from './department.entity';
 import { Municipality } from './municipality.entity';
 import { VotingBooth } from './voting-booth.entity';
 import { User } from './user.entity';
+import { PoliticalStatus } from './political-status.entity';
 
 @Entity('voters')
 @Index(['identification'])
@@ -27,6 +28,7 @@ import { User } from './user.entity';
 @Index(['phone'])
 @Index(['createdByUserId'])
 @Index(['hasVoted'])
+@Index(['politicalStatusId'])
 export class Voter {
   @PrimaryGeneratedColumn()
   id: number;
@@ -90,6 +92,13 @@ export class Voter {
 
   @Column({ nullable: true })
   politicalStatus: string;
+
+  @Column({ nullable: true })
+  politicalStatusId: number;
+
+  @ManyToOne(() => PoliticalStatus, { nullable: true })
+  @JoinColumn({ name: 'politicalStatusId' })
+  politicalStatusMaster: PoliticalStatus;
 
   @ManyToMany(() => Candidate, (candidate) => candidate.voters)
   @JoinTable({

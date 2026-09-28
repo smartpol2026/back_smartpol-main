@@ -1,5 +1,6 @@
+import 'dotenv/config';
 import { DataSource } from 'typeorm';
-import { Leader } from './src/database/entities/leader.entity';
+import { Leader } from '../src/database/entities/leader.entity';
 
 const leaderData = [
   { document: '1888116', name: 'HELMAR MENDOZA', phone: '3103814496', municipality: 'OVEJAS' },
@@ -42,7 +43,7 @@ async function seedLeaders() {
   const AppDataSource = new DataSource({
     type: 'postgres',
     host: process.env.DB_HOST || 'localhost',
-    port: parseInt(process.env.DB_PORT || '5236'),
+    port: parseInt(process.env.DB_PORT || '5432', 10),
     username: process.env.DB_USERNAME || 'temp-smartpol_user',
     password: process.env.DB_PASSWORD || 'temp-smartpol_password',
     database: process.env.DB_DATABASE || 'temp-smartpol_db',
@@ -74,7 +75,9 @@ async function seedLeaders() {
   } catch (error) {
     console.error('❌ Error during seeding:', error);
   } finally {
-    await AppDataSource.destroy();
+    if (AppDataSource.isInitialized) {
+      await AppDataSource.destroy();
+    }
   }
 }
 
