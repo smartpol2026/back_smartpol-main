@@ -18,6 +18,7 @@ import { VotingTableModule } from './modules/voting-tables/voting-table.module';
 import { PermissionsModule } from './permissions/permissions.module';
 import { OrganizationsModule } from './modules/organizations/organization.module';
 import { CampaignsModule } from './modules/campaigns/campaign.module';
+import { PoliticalStatusModule } from './modules/political-statuses/political-status.module';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import {
   User,
@@ -39,6 +40,7 @@ import {
   CampaignUser,
   VotersHistory,
   Divipol,
+  PoliticalStatus,
 } from './database/entities';
 
 @Module({
@@ -76,6 +78,7 @@ import {
         CampaignUser,
         VotersHistory,
         Divipol,
+        PoliticalStatus,
       ],
       synchronize: false,
       logging:
@@ -115,6 +118,7 @@ import {
       CampaignUser,
       VotersHistory,
       Divipol,
+      PoliticalStatus,
     ]),
     AuthModule,
     CorporationModule,
@@ -129,6 +133,7 @@ import {
     PermissionsModule,
     OrganizationsModule,
     CampaignsModule,
+    PoliticalStatusModule,
   ],
   controllers: [AppController],
   providers: [

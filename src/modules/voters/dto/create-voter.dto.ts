@@ -171,4 +171,13 @@ export class CreateVoterDto {
   @IsString()
   @IsOptional()
   politicalStatus?: string;
+
+  @ApiProperty({
+    example: 1,
+    description: 'Political status master ID (optional)',
+    required: false,
+  })
+  @IsNumber()
+  @IsOptional()
+  politicalStatusId?: number;
 }

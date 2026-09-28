@@ -24,6 +24,7 @@ export class VoterSearchByIdentificationDto {
     votingBoothId: number;
     votingTableId: string;
     politicalStatus: string;
+    politicalStatusId: number;
     hasVoted: boolean;
   };
 
@@ -64,6 +65,7 @@ export class VoterSearchByIdentificationDto {
     votingBoothId: number;
     votingTableId: string;
     politicalStatus: string;
+    politicalStatusId: number;
   };
 
   message?: string;

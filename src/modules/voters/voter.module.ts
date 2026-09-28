@@ -12,6 +12,7 @@ import { VoterController } from './voter.controller';
 import { VotingBooth } from 'src/database/entities/voting-booth.entity';
 import { VotingTable } from 'src/database/entities/voting-table.entity';
 import { Divipol } from 'src/database/entities/divipol.entity';
+import { PoliticalStatus } from 'src/database/entities/political-status.entity';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { Divipol } from 'src/database/entities/divipol.entity';
       VotingTable,
       VotersHistory,
       Divipol,
+      PoliticalStatus,
     ]),
   ],
   controllers: [VoterController],

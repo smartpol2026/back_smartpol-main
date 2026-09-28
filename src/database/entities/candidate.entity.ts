@@ -37,6 +37,9 @@ export class Candidate {
   @Column()
   number: number;
 
+  @Column({ nullable: true })
+  color: string;
+
   @ManyToOne(() => Corporation, (corporation) => corporation.candidates)
   @JoinColumn({ name: 'corporation_id' })
   corporation: Corporation;

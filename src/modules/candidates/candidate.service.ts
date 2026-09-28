@@ -413,17 +413,20 @@ export class CandidateService {
       candidateId: number;
       candidateName: string;
       voterCount: number;
+      candidateColor: string | null;
     }>
   > {
     const query = this.candidateRepository
       .createQueryBuilder('candidate')
-      .leftJoinAndSelect('candidate.campaign', 'campaign')
+      .leftJoin('candidate.campaign', 'campaign')
       .leftJoin('candidate_voter', 'cv', 'cv.candidate_id = candidate.id')
       .select('candidate.id', 'candidateId')
       .addSelect('candidate.name', 'candidateName')
+      .addSelect('candidate.color', 'candidateColor')
       .addSelect('COUNT(DISTINCT cv.voter_id)', 'voterCount')
       .groupBy('candidate.id')
       .addGroupBy('candidate.name')
+      .addGroupBy('candidate.color')
       .orderBy('COUNT(DISTINCT cv.voter_id)', 'DESC');
 
     // Filtrar por organización si se proporciona
@@ -439,6 +442,7 @@ export class CandidateService {
       candidateId: parseInt(row.candidateId),
       candidateName: row.candidateName,
       voterCount: parseInt(row.voterCount),
+      candidateColor: row.candidateColor ?? null,
     }));
   }
 
@@ -449,13 +453,15 @@ export class CandidateService {
     Array<{
       party: string;
       voterCount: number;
+      candidateColor: string | null;
     }>
   > {
     const query = this.candidateRepository
       .createQueryBuilder('candidate')
-      .leftJoinAndSelect('candidate.campaign', 'campaign')
+      .leftJoin('candidate.campaign', 'campaign')
       .leftJoin('candidate_voter', 'cv', 'cv.candidate_id = candidate.id')
       .select('candidate.party', 'party')
+      .addSelect('MAX(candidate.color)', 'candidateColor')
       .addSelect('COUNT(DISTINCT cv.voter_id)', 'voterCount')
       .groupBy('candidate.party')
       .orderBy('COUNT(DISTINCT cv.voter_id)', 'DESC');
@@ -474,6 +480,7 @@ export class CandidateService {
       .map((row) => ({
         party: row.party,
         voterCount: parseInt(row.voterCount),
+        candidateColor: row.candidateColor ?? null,
       }));
   }
 

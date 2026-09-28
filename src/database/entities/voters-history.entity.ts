@@ -61,6 +61,9 @@ export class VotersHistory {
   @Column({ nullable: true })
   politicalStatus: string;
 
+  @Column({ nullable: true })
+  politicalStatusId: number;
+
   @CreateDateColumn()
   createdAt: Date;
 
