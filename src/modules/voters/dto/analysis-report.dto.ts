@@ -21,6 +21,11 @@ export class AnalysisReportFilterDto {
   @IsInt()
   @Type(() => Number)
   votingTableId?: number;
+
+  @IsOptional()
+  @IsInt()
+  @Type(() => Number)
+  politicalStatusId?: number;
 }
 
 export class AnalysisReportRowDto {

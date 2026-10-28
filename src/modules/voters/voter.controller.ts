@@ -25,6 +25,10 @@ import { CreateVoterDto } from './dto/create-voter.dto';
 import { UpdateVoterDto } from './dto/update-voter.dto';
 import { AssignCandidateDto } from './dto/assign-candidate.dto';
 import { VoterReportFilterDto } from './dto/voter-report.dto';
+import { CandidateReportFilterDto } from './dto/candidate-report.dto';
+import { LeaderReportFilterDto } from './dto/leader-report.dto';
+import { PartyReportFilterDto } from './dto/party-report.dto';
+import { PoliticalStatusReportFilterDto } from './dto/political-status-report.dto';
 import { VoterSearchByIdentificationDto } from './dto/voter-search-identification.dto';
 import {
   PaginationQueryDto,
@@ -903,6 +907,12 @@ export class VoterController {
     description: 'Filter by voting table ID',
   })
   @ApiQuery({
+    name: 'politicalStatusId',
+    type: 'number',
+    required: false,
+    description: 'Filter by political status ID',
+  })
+  @ApiQuery({
     name: 'limit',
     type: 'number',
     required: false,
@@ -917,6 +927,268 @@ export class VoterController {
     @CurrentUser() user?: any,
   ): Promise<any> {
     return await this.voterService.getVoterReport(filters, user);
+  }
+
+  @Get('report/candidates')
+  @Permission('reports:read')
+  @ApiOperation({
+    summary: 'Get candidate report with voter totals',
+    description:
+      'Returns a list of candidates with total registered voters (inscritos), reported (reportados / hasVoted=true) and pending (pendientes / hasVoted=false). Campaign admins and digitadores only see candidates from their organization.',
+  })
+  @ApiQuery({
+    name: 'candidateId',
+    type: 'number',
+    required: false,
+    description: 'Filter by candidate ID',
+  })
+  @ApiQuery({
+    name: 'corporationId',
+    type: 'number',
+    required: false,
+    description: 'Filter by corporation ID',
+  })
+  @ApiQuery({
+    name: 'campaignId',
+    type: 'number',
+    required: false,
+    description: 'Filter by campaign ID',
+  })
+  @ApiQuery({
+    name: 'page',
+    type: 'number',
+    required: false,
+    description: 'Page number (default: 1)',
+  })
+  @ApiQuery({
+    name: 'limit',
+    type: 'number',
+    required: false,
+    description: 'Candidates per page (default: 20)',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Candidate report retrieved successfully',
+    schema: {
+      example: {
+        data: [
+          {
+            id: 1,
+            name: 'Juan Pérez',
+            inscritos: 120,
+            reportados: 45,
+            pendientes: 75,
+          },
+        ],
+        page: 1,
+        limit: 20,
+        total: 1,
+        pages: 1,
+      },
+    },
+  })
+  async getCandidateReport(
+    @Query() filters: CandidateReportFilterDto,
+    @CurrentUser() user?: any,
+  ): Promise<any> {
+    return await this.voterService.getCandidateReport(filters, user);
+  }
+
+  @Get('report/leaders')
+  @Permission('reports:read')
+  @ApiOperation({
+    summary: 'Get leader report with voter totals',
+    description:
+      'Returns a list of leaders with total registered voters (inscritos), reported (reportados) and pending (pendientes). Municipality/department filters match leaders.municipality string against the municipalities master table by name. Campaign admins and digitadores only see leaders from their organization.',
+  })
+  @ApiQuery({
+    name: 'name',
+    type: 'string',
+    required: false,
+    description: 'Filter by leader name (partial, case-insensitive)',
+  })
+  @ApiQuery({
+    name: 'campaignId',
+    type: 'number',
+    required: false,
+    description: 'Filter by campaign ID',
+  })
+  @ApiQuery({
+    name: 'municipalityId',
+    type: 'number',
+    required: false,
+    description:
+      'Filter by municipality master ID (matched to leaders.municipality by name)',
+  })
+  @ApiQuery({
+    name: 'departmentId',
+    type: 'number',
+    required: false,
+    description:
+      'Filter by department ID (leaders whose municipality string matches a municipality in that department)',
+  })
+  @ApiQuery({
+    name: 'municipality',
+    type: 'string',
+    required: false,
+    description: 'Partial match against leaders.municipality string',
+  })
+  @ApiQuery({
+    name: 'page',
+    type: 'number',
+    required: false,
+    description: 'Page number (default: 1)',
+  })
+  @ApiQuery({
+    name: 'limit',
+    type: 'number',
+    required: false,
+    description: 'Leaders per page (default: 20)',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Leader report retrieved successfully',
+    schema: {
+      example: {
+        data: [
+          {
+            id: 1,
+            name: 'María López',
+            municipality: 'OVEJAS',
+            inscritos: 80,
+            reportados: 30,
+            pendientes: 50,
+          },
+        ],
+        page: 1,
+        limit: 20,
+        total: 1,
+        pages: 1,
+      },
+    },
+  })
+  async getLeaderReport(
+    @Query() filters: LeaderReportFilterDto,
+    @CurrentUser() user?: any,
+  ): Promise<any> {
+    return await this.voterService.getLeaderReport(filters, user);
+  }
+
+  @Get('report/parties')
+  @Permission('reports:read')
+  @ApiOperation({
+    summary: 'Get political party report with voter totals',
+    description:
+      'Returns a list of political parties (candidates.party) with total registered voters (inscritos), reported (reportados / hasVoted=true) and pending (pendientes / hasVoted=false). Campaign admins and digitadores only see parties from their organization.',
+  })
+  @ApiQuery({
+    name: 'party',
+    type: 'string',
+    required: false,
+    description: 'Filter by political party (partial, case-insensitive)',
+  })
+  @ApiQuery({
+    name: 'campaignId',
+    type: 'number',
+    required: false,
+    description: 'Filter by campaign ID',
+  })
+  @ApiQuery({
+    name: 'corporationId',
+    type: 'number',
+    required: false,
+    description: 'Filter by corporation ID',
+  })
+  @ApiQuery({
+    name: 'page',
+    type: 'number',
+    required: false,
+    description: 'Page number (default: 1)',
+  })
+  @ApiQuery({
+    name: 'limit',
+    type: 'number',
+    required: false,
+    description: 'Parties per page (default: 20)',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Party report retrieved successfully',
+    schema: {
+      example: {
+        data: [
+          {
+            party: 'Partido Liberal',
+            inscritos: 200,
+            reportados: 80,
+            pendientes: 120,
+          },
+        ],
+        page: 1,
+        limit: 20,
+        total: 1,
+        pages: 1,
+      },
+    },
+  })
+  async getPartyReport(
+    @Query() filters: PartyReportFilterDto,
+    @CurrentUser() user?: any,
+  ): Promise<any> {
+    return await this.voterService.getPartyReport(filters, user);
+  }
+
+  @Get('report/political-status')
+  @Permission('reports:read')
+  @ApiOperation({
+    summary: 'Get political status report',
+    description:
+      'Returns one row per political status with enrolled, reported, and pending voter counts. Campaign admins and digitadores only see voters from their organization.',
+  })
+  @ApiQuery({
+    name: 'politicalStatusId',
+    type: 'number',
+    required: false,
+    description: 'Filter by political status ID',
+  })
+  @ApiQuery({
+    name: 'page',
+    type: 'number',
+    required: false,
+    description: 'Page number (default: 1)',
+  })
+  @ApiQuery({
+    name: 'limit',
+    type: 'number',
+    required: false,
+    description: 'Political statuses per page (default: 20, max: 500)',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Political status report retrieved successfully',
+    schema: {
+      example: {
+        data: [
+          {
+            id: 3,
+            name: 'Indeciso',
+            inscritos: 200,
+            reportados: 80,
+            pendientes: 120,
+          },
+        ],
+        page: 1,
+        limit: 20,
+        total: 1,
+        pages: 1,
+      },
+    },
+  })
+  async getPoliticalStatusReport(
+    @Query() filters: PoliticalStatusReportFilterDto,
+    @CurrentUser() user?: any,
+  ): Promise<any> {
+    return await this.voterService.getPoliticalStatusReport(filters, user);
   }
 
   @Get('report/analysis')
@@ -949,6 +1221,12 @@ export class VoterController {
     type: 'number',
     required: false,
     description: 'Filter by voting table ID',
+  })
+  @ApiQuery({
+    name: 'politicalStatusId',
+    type: 'number',
+    required: false,
+    description: 'Filter by political status ID',
   })
   @ApiResponse({
     status: 200,

@@ -20,6 +20,22 @@ import { CreateVoterDto } from './dto/create-voter.dto';
 import { UpdateVoterDto } from './dto/update-voter.dto';
 import { AssignCandidateDto } from './dto/assign-candidate.dto';
 import { VoterReportFilterDto, VoterReportDto } from './dto/voter-report.dto';
+import {
+  CandidateReportFilterDto,
+  CandidateReportDto,
+} from './dto/candidate-report.dto';
+import {
+  LeaderReportFilterDto,
+  LeaderReportDto,
+} from './dto/leader-report.dto';
+import {
+  PartyReportFilterDto,
+  PartyReportDto,
+} from './dto/party-report.dto';
+import {
+  PoliticalStatusReportDto,
+  PoliticalStatusReportFilterDto,
+} from './dto/political-status-report.dto';
 import { VoterSearchByIdentificationDto } from './dto/voter-search-identification.dto';
 import {
   PaginationQueryDto,
@@ -1312,6 +1328,24 @@ export class VoterService {
       }
     }
 
+    if (filters.politicalStatusId) {
+      const politicalStatusId = parseInt(filters.politicalStatusId as any);
+      if (!isNaN(politicalStatusId) && politicalStatusId > 0) {
+        voterIdQuery = voterIdQuery.andWhere(
+          'voter.politicalStatusId = :politicalStatusId',
+          {
+            politicalStatusId,
+          },
+        );
+      }
+    }
+
+    if (filters.voteStatus === 'reportado') {
+      voterIdQuery = voterIdQuery.andWhere('voter.hasvoted = true');
+    } else if (filters.voteStatus === 'pendiente') {
+      voterIdQuery = voterIdQuery.andWhere('voter.hasvoted = false');
+    }
+
     // PASO 1: Obtener IDs únicos de votantes (sin paginación, para contar total)
     const allVoterIds = await voterIdQuery.getRawMany();
     const totalCount = allVoterIds.length;
@@ -1348,6 +1382,7 @@ export class VoterService {
       .leftJoinAndSelect('voter.department', 'department')
       .leftJoinAndSelect('voter.municipality', 'municipality')
       .leftJoinAndSelect('voter.votingBooth', 'votingBooth')
+      .leftJoinAndSelect('voter.politicalStatusMaster', 'politicalStatusMaster')
       .leftJoinAndSelect('cv.candidate', 'candidate')
       .leftJoinAndSelect('candidate.corporation', 'corporation')
       .leftJoinAndSelect('candidate.campaign', 'campaign')
@@ -1395,6 +1430,10 @@ export class VoterService {
               }
             : undefined,
           votingTableId: assignment.voter.votingTableId,
+          politicalStatusId: assignment.voter.politicalStatusId ?? null,
+          politicalStatus:
+            assignment.voter.politicalStatusMaster?.name || 'N/A',
+          hasVoted: assignment.voter.hasVoted ?? false,
           candidates: [],
           leaders: [],
         });
@@ -1495,6 +1534,24 @@ export class VoterService {
             },
           );
         }
+      }
+
+      if (filters.politicalStatusId) {
+        const politicalStatusId = parseInt(filters.politicalStatusId as any);
+        if (!isNaN(politicalStatusId) && politicalStatusId > 0) {
+          query = query.andWhere(
+            'voter.politicalStatusId = :politicalStatusId',
+            {
+              politicalStatusId,
+            },
+          );
+        }
+      }
+
+      if (filters.voteStatus === 'reportado') {
+        query = query.andWhere('voter.hasvoted = true');
+      } else if (filters.voteStatus === 'pendiente') {
+        query = query.andWhere('voter.hasvoted = false');
       }
 
       return query;
@@ -2694,6 +2751,391 @@ export class VoterService {
     };
   }
 
+  async getCandidateReport(
+    filters: CandidateReportFilterDto,
+    user?: any,
+  ): Promise<{
+    data: CandidateReportDto[];
+    page: number;
+    limit: number;
+    total: number;
+    pages: number;
+  }> {
+    let query = this.candidateRepository
+      .createQueryBuilder('candidate')
+      .leftJoin('candidate.campaign', 'campaign')
+      .leftJoin(
+        'candidate_voter',
+        'cv',
+        'cv.candidate_id = candidate.id',
+      )
+      .leftJoin('voters', 'voter', 'voter.id = cv.voter_id')
+      .select('candidate.id', 'id')
+      .addSelect('candidate.name', 'name')
+      .addSelect('COUNT(DISTINCT voter.id)', 'inscritos')
+      .addSelect(
+        'COUNT(DISTINCT CASE WHEN voter.hasvoted = true THEN voter.id END)',
+        'reportados',
+      )
+      .addSelect(
+        'COUNT(DISTINCT CASE WHEN voter.hasvoted = false THEN voter.id END)',
+        'pendientes',
+      )
+      .groupBy('candidate.id')
+      .addGroupBy('candidate.name')
+      .orderBy('candidate.name', 'ASC');
+
+    if (user?.organizationId) {
+      query = query.andWhere('campaign.organizationId = :organizationId', {
+        organizationId: user.organizationId,
+      });
+    }
+
+    if (filters.candidateId) {
+      const candidateId = parseInt(filters.candidateId as any, 10);
+      if (!isNaN(candidateId) && candidateId > 0) {
+        query = query.andWhere('candidate.id = :candidateId', {
+          candidateId,
+        });
+      }
+    }
+
+    if (filters.corporationId) {
+      const corporationId = parseInt(filters.corporationId as any, 10);
+      if (!isNaN(corporationId) && corporationId > 0) {
+        query = query.andWhere('candidate.corporation_id = :corporationId', {
+          corporationId,
+        });
+      }
+    }
+
+    if (filters.campaignId) {
+      const campaignId = parseInt(filters.campaignId as any, 10);
+      if (!isNaN(campaignId) && campaignId > 0) {
+        query = query.andWhere('candidate.campaignId = :campaignId', {
+          campaignId,
+        });
+      }
+    }
+
+    const allRows = await query.getRawMany();
+    const total = allRows.length;
+
+    const page = Math.max(1, parseInt(filters.page as any, 10) || 1);
+    const limit = Math.max(
+      1,
+      Math.min(parseInt(filters.limit as any, 10) || 20, 500),
+    );
+    const skip = (page - 1) * limit;
+
+    const data: CandidateReportDto[] = allRows
+      .slice(skip, skip + limit)
+      .map((row) => ({
+        id: parseInt(row.id, 10),
+        name: row.name,
+        inscritos: parseInt(row.inscritos, 10) || 0,
+        reportados: parseInt(row.reportados, 10) || 0,
+        pendientes: parseInt(row.pendientes, 10) || 0,
+      }));
+
+    return {
+      data,
+      page,
+      limit,
+      total,
+      pages: Math.ceil(total / limit) || 0,
+    };
+  }
+
+  async getLeaderReport(
+    filters: LeaderReportFilterDto,
+    user?: any,
+  ): Promise<{
+    data: LeaderReportDto[];
+    page: number;
+    limit: number;
+    total: number;
+    pages: number;
+  }> {
+    let query = this.leaderRepository
+      .createQueryBuilder('leader')
+      .leftJoin('leader.campaign', 'campaign')
+      .leftJoin('candidate_voter', 'cv', 'cv.leader_id = leader.id')
+      .leftJoin('voters', 'voter', 'voter.id = cv.voter_id')
+      .select('leader.id', 'id')
+      .addSelect('leader.name', 'name')
+      .addSelect('leader.municipality', 'municipality')
+      .addSelect('COUNT(DISTINCT voter.id)', 'inscritos')
+      .addSelect(
+        'COUNT(DISTINCT CASE WHEN voter.hasvoted = true THEN voter.id END)',
+        'reportados',
+      )
+      .addSelect(
+        'COUNT(DISTINCT CASE WHEN voter.hasvoted = false THEN voter.id END)',
+        'pendientes',
+      )
+      .groupBy('leader.id')
+      .addGroupBy('leader.name')
+      .addGroupBy('leader.municipality')
+      .orderBy('leader.name', 'ASC');
+
+    if (user?.organizationId) {
+      query = query.andWhere('campaign.organizationId = :organizationId', {
+        organizationId: user.organizationId,
+      });
+    }
+
+    if (filters.name?.trim()) {
+      query = query.andWhere('LOWER(leader.name) LIKE LOWER(:name)', {
+        name: `%${filters.name.trim()}%`,
+      });
+    }
+
+    if (filters.campaignId) {
+      const campaignId = parseInt(filters.campaignId as any, 10);
+      if (!isNaN(campaignId) && campaignId > 0) {
+        query = query.andWhere('leader.campaignId = :campaignId', {
+          campaignId,
+        });
+      }
+    }
+
+    // leaders.municipality is free text — match against municipalities.name
+    if (filters.municipalityId) {
+      const municipalityId = parseInt(filters.municipalityId as any, 10);
+      if (!isNaN(municipalityId) && municipalityId > 0) {
+        const municipality = await this.municipalityRepository.findOneBy({
+          id: municipalityId,
+        });
+        if (municipality) {
+          query = query.andWhere(
+            'LOWER(TRIM(leader.municipality)) = LOWER(TRIM(:municipalityName))',
+            { municipalityName: municipality.name },
+          );
+        } else {
+          return {
+            data: [],
+            page: 1,
+            limit: Math.max(
+              1,
+              Math.min(parseInt(filters.limit as any, 10) || 20, 500),
+            ),
+            total: 0,
+            pages: 0,
+          };
+        }
+      }
+    }
+
+    if (filters.departmentId) {
+      const departmentId = parseInt(filters.departmentId as any, 10);
+      if (!isNaN(departmentId) && departmentId > 0) {
+        query = query.andWhere(
+          `EXISTS (
+            SELECT 1 FROM municipalities m
+            WHERE m."departmentId" = :departmentId
+              AND LOWER(TRIM(leader.municipality)) = LOWER(TRIM(m.name))
+          )`,
+          { departmentId },
+        );
+      }
+    }
+
+    if (filters.municipality?.trim()) {
+      query = query.andWhere(
+        'LOWER(leader.municipality) LIKE LOWER(:municipality)',
+        { municipality: `%${filters.municipality.trim()}%` },
+      );
+    }
+
+    const allRows = await query.getRawMany();
+    const total = allRows.length;
+
+    const page = Math.max(1, parseInt(filters.page as any, 10) || 1);
+    const limit = Math.max(
+      1,
+      Math.min(parseInt(filters.limit as any, 10) || 20, 500),
+    );
+    const skip = (page - 1) * limit;
+
+    const data: LeaderReportDto[] = allRows
+      .slice(skip, skip + limit)
+      .map((row) => ({
+        id: parseInt(row.id, 10),
+        name: row.name,
+        municipality: row.municipality || 'N/A',
+        inscritos: parseInt(row.inscritos, 10) || 0,
+        reportados: parseInt(row.reportados, 10) || 0,
+        pendientes: parseInt(row.pendientes, 10) || 0,
+      }));
+
+    return {
+      data,
+      page,
+      limit,
+      total,
+      pages: Math.ceil(total / limit) || 0,
+    };
+  }
+
+  async getPartyReport(
+    filters: PartyReportFilterDto,
+    user?: any,
+  ): Promise<{
+    data: PartyReportDto[];
+    page: number;
+    limit: number;
+    total: number;
+    pages: number;
+  }> {
+    let query = this.candidateRepository
+      .createQueryBuilder('candidate')
+      .leftJoin('candidate.campaign', 'campaign')
+      .leftJoin('candidate_voter', 'cv', 'cv.candidate_id = candidate.id')
+      .leftJoin('voters', 'voter', 'voter.id = cv.voter_id')
+      .select('candidate.party', 'party')
+      .addSelect('COUNT(DISTINCT voter.id)', 'inscritos')
+      .addSelect(
+        'COUNT(DISTINCT CASE WHEN voter.hasvoted = true THEN voter.id END)',
+        'reportados',
+      )
+      .addSelect(
+        'COUNT(DISTINCT CASE WHEN voter.hasvoted = false THEN voter.id END)',
+        'pendientes',
+      )
+      .groupBy('candidate.party')
+      .orderBy('COUNT(DISTINCT voter.id)', 'DESC');
+
+    if (user?.organizationId) {
+      query = query.andWhere('campaign.organizationId = :organizationId', {
+        organizationId: user.organizationId,
+      });
+    }
+
+    if (filters.party?.trim()) {
+      query = query.andWhere('LOWER(candidate.party) LIKE LOWER(:party)', {
+        party: `%${filters.party.trim()}%`,
+      });
+    }
+
+    if (filters.corporationId) {
+      const corporationId = parseInt(filters.corporationId as any, 10);
+      if (!isNaN(corporationId) && corporationId > 0) {
+        query = query.andWhere('candidate.corporation_id = :corporationId', {
+          corporationId,
+        });
+      }
+    }
+
+    if (filters.campaignId) {
+      const campaignId = parseInt(filters.campaignId as any, 10);
+      if (!isNaN(campaignId) && campaignId > 0) {
+        query = query.andWhere('candidate.campaignId = :campaignId', {
+          campaignId,
+        });
+      }
+    }
+
+    const allRows = await query.getRawMany();
+    const total = allRows.length;
+
+    const page = Math.max(1, parseInt(filters.page as any, 10) || 1);
+    const limit = Math.max(
+      1,
+      Math.min(parseInt(filters.limit as any, 10) || 20, 500),
+    );
+    const skip = (page - 1) * limit;
+
+    const data: PartyReportDto[] = allRows
+      .slice(skip, skip + limit)
+      .map((row) => ({
+        party: row.party || 'N/A',
+        inscritos: parseInt(row.inscritos, 10) || 0,
+        reportados: parseInt(row.reportados, 10) || 0,
+        pendientes: parseInt(row.pendientes, 10) || 0,
+      }));
+
+    return {
+      data,
+      page,
+      limit,
+      total,
+      pages: Math.ceil(total / limit) || 0,
+    };
+  }
+
+  async getPoliticalStatusReport(
+    filters: PoliticalStatusReportFilterDto,
+    user?: any,
+  ): Promise<{
+    data: PoliticalStatusReportDto[];
+    page: number;
+    limit: number;
+    total: number;
+    pages: number;
+  }> {
+    let query = this.candidateVoterRepository
+      .createQueryBuilder('cv')
+      .innerJoin('cv.voter', 'voter')
+      .innerJoin('voter.politicalStatusMaster', 'politicalStatus')
+      .leftJoin('cv.candidate', 'candidate')
+      .leftJoin('candidate.campaign', 'campaign')
+      .leftJoin('candidate.corporation', 'corporation')
+      .select('politicalStatus.id', 'id')
+      .addSelect('politicalStatus.name', 'name')
+      .addSelect('COUNT(DISTINCT voter.id)', 'inscritos')
+      .addSelect(
+        'COUNT(DISTINCT CASE WHEN voter.hasvoted = true THEN voter.id END)',
+        'reportados',
+      )
+      .addSelect(
+        'COUNT(DISTINCT CASE WHEN voter.hasvoted = false THEN voter.id END)',
+        'pendientes',
+      )
+      .groupBy('politicalStatus.id')
+      .addGroupBy('politicalStatus.name')
+      .orderBy('politicalStatus.name', 'ASC');
+
+    if (user?.organizationId) {
+      query = query.andWhere('campaign.organizationId = :organizationId', {
+        organizationId: user.organizationId,
+      });
+    }
+
+    const politicalStatusId = parseInt(filters.politicalStatusId as any, 10);
+    if (!isNaN(politicalStatusId) && politicalStatusId > 0) {
+      query = query.andWhere(
+        'voter.politicalStatusId = :politicalStatusId',
+        { politicalStatusId },
+      );
+    }
+
+    const allRows = await query.getRawMany();
+    const total = allRows.length;
+    const page = Math.max(1, parseInt(filters.page as any, 10) || 1);
+    const limit = Math.max(
+      1,
+      Math.min(parseInt(filters.limit as any, 10) || 20, 500),
+    );
+    const skip = (page - 1) * limit;
+
+    const data = allRows.slice(skip, skip + limit).map((row) => ({
+      id: parseInt(row.id, 10),
+      name: row.name,
+      inscritos: parseInt(row.inscritos, 10) || 0,
+      reportados: parseInt(row.reportados, 10) || 0,
+      pendientes: parseInt(row.pendientes, 10) || 0,
+    }));
+
+    return {
+      data,
+      page,
+      limit,
+      total,
+      pages: Math.ceil(total / limit) || 0,
+    };
+  }
+
   async getAnalysisReport(filters: any, user?: any): Promise<any[]> {
     // Obtener IDs de votantes únicos basados en organización
     let voterIdQuery = this.candidateVoterRepository
@@ -2767,6 +3209,18 @@ export class VoterService {
           {
             votingTableNumber: mesaNumber,
             votingTableLabel: `Mesa ${mesaNumber}`,
+          },
+        );
+      }
+    }
+
+    if (filters.politicalStatusId) {
+      const politicalStatusId = parseInt(filters.politicalStatusId, 10);
+      if (!isNaN(politicalStatusId) && politicalStatusId > 0) {
+        query = query.andWhere(
+          'voter.politicalStatusId = :politicalStatusId',
+          {
+            politicalStatusId,
           },
         );
       }

@@ -225,6 +225,36 @@ export class CandidateController {
     return await this.candidateService.findByCampaignIds([+campaignId]);
   }
 
+  @Get('parties')
+  @Permission('candidates:read')
+  @ApiOperation({
+    summary: 'Get list of political parties',
+    description:
+      "Returns the distinct list of political parties (candidates.party) of the authenticated user's organization, sorted alphabetically. Supports partial, case-insensitive search.",
+  })
+  @ApiQuery({
+    name: 'search',
+    type: 'string',
+    required: false,
+    description: 'Partial, case-insensitive match against party name',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'List of political parties retrieved successfully',
+    schema: {
+      example: ['Partido Conservador', 'Partido Liberal Colombiano'],
+    },
+  })
+  async getAllParties(
+    @Request() req: any,
+    @Query('search') search?: string,
+  ): Promise<string[]> {
+    return await this.candidateService.getAllParties(
+      req.user?.organizationId,
+      search,
+    );
+  }
+
   @Get(':id')
   @Permission('candidates:read')
   @ApiParam({

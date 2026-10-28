@@ -1,4 +1,11 @@
-import { IsOptional, IsString, IsNumber, Min, Max } from 'class-validator';
+import {
+  IsOptional,
+  IsString,
+  IsNumber,
+  IsIn,
+  Min,
+  Max,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
 
@@ -53,6 +60,22 @@ export class VoterReportFilterDto {
   @IsOptional()
   @Type(() => Number)
   @IsNumber()
+  politicalStatusId?: number;
+
+  @ApiProperty({
+    required: false,
+    enum: ['inscrito', 'reportado', 'pendiente'],
+    description:
+      'Filter by vote status: inscrito (all enrolled voters), reportado (hasVoted=true), pendiente (hasVoted=false)',
+  })
+  @IsOptional()
+  @IsIn(['inscrito', 'reportado', 'pendiente'])
+  voteStatus?: string;
+
+  @ApiProperty({ required: false, example: 1 })
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
   @Min(1)
   page?: number;
 
@@ -99,6 +122,9 @@ export class VoterReportDto {
   votingBooth?: VotingBoothDto;
   votingTableId?: string;
   votingTable?: VotingTableDto;
+  politicalStatusId?: number;
+  politicalStatus?: string;
+  hasVoted?: boolean;
   candidates?: Array<{
     id: number;
     name: string;
