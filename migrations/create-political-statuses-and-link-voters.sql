@@ -8,9 +8,11 @@ CREATE TABLE IF NOT EXISTS political_statuses (
 
 INSERT INTO political_statuses (name)
 VALUES
-    ('Activo'),
     ('Pendiente'),
-    ('Inactivo')
+    ('Comprometido - equipo'),
+    ('Indeciso'),
+    ('Contactado Comprometido'),
+    ('Contactado no apoya')
 ON CONFLICT (name) DO NOTHING;
 
 -- Numeric field in voters for master-table relation

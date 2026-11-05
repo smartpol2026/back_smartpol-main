@@ -23,6 +23,7 @@
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "seed:leaders": "ts-node seeds/seed-leaders.ts",
     "seed:political-statuses": "ts-node seeds/seed-political-statuses.ts",
+    "seed:corporations": "ts-node seeds/seed-corporations.ts",
     "seed:candidate-leaders": "ts-node seeds/seed-candidate-leaders.ts",
     "seed:departments-municipalities": "ts-node seeds/seed-departments-municipalities.ts",
     "verify:candidate-leaders": "ts-node verify-candidate-leaders.ts",
