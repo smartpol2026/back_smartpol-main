@@ -178,6 +178,7 @@ export class CandidateService {
     }
 
     const [candidates, total] = await query
+      .orderBy('candidate.name', 'ASC')
       .skip(skip)
       .take(limit)
       .getManyAndCount();
@@ -482,6 +483,39 @@ export class CandidateService {
         voterCount: parseInt(row.voterCount),
         candidateColor: row.candidateColor ?? null,
       }));
+  }
+
+  /**
+   * Obtener el listado de partidos políticos (distintos) de una organización
+   */
+  async getAllParties(
+    organizationId?: number,
+    search?: string,
+  ): Promise<string[]> {
+    const query = this.candidateRepository
+      .createQueryBuilder('candidate')
+      .leftJoin('candidate.campaign', 'campaign')
+      .select('candidate.party', 'party')
+      .where('candidate.party IS NOT NULL')
+      .andWhere("TRIM(candidate.party) != ''");
+
+    if (organizationId) {
+      query.andWhere('campaign.organizationId = :organizationId', {
+        organizationId,
+      });
+    }
+
+    if (search?.trim()) {
+      query.andWhere('LOWER(candidate.party) LIKE LOWER(:search)', {
+        search: `%${search.trim()}%`,
+      });
+    }
+
+    query.groupBy('candidate.party').orderBy('candidate.party', 'ASC');
+
+    const results = await query.getRawMany();
+
+    return results.map((row: { party: string }) => row.party);
   }
 
   async findByLeaderAndCorporation(

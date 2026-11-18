@@ -32,11 +32,16 @@ export class CorporationService {
     if (this.cacheService) {
       return await this.cacheService.get(
         'corporations:all',
-        () => this.corporationRepository.find(),
+        () =>
+          this.corporationRepository.find({
+            order: { name: 'ASC' },
+          }),
         3600,
       );
     }
-    return await this.corporationRepository.find();
+    return await this.corporationRepository.find({
+      order: { name: 'ASC' },
+    });
   }
 
   async findOne(id: number): Promise<Corporation | null> {

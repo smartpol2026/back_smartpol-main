@@ -114,7 +114,7 @@ export class LeaderService {
     }
 
     const [leaders, total] = await query
-      .orderBy('leader.createdAt', 'DESC')
+      .orderBy('leader.name', 'ASC')
       .skip(skip)
       .take(limit)
       .getManyAndCount();
