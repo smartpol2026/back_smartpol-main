@@ -1,4 +1,11 @@
-import { IsEmail, IsOptional, IsString, MinLength, IsNumber, IsArray } from 'class-validator';
+import {
+  IsEmail,
+  IsOptional,
+  IsString,
+  MinLength,
+  IsNumber,
+  IsArray,
+} from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class UpdateUserDto {
@@ -31,12 +38,33 @@ export class UpdateUserDto {
   organizationId?: number;
 
   @ApiProperty({
-    example: [1, 2, 3],
-    description: 'Campaign IDs to assign (optional)',
+    example: [1],
+    description:
+      'Campaign IDs to assign. For Director de campaña (7) and Testigo electoral (8) must contain exactly one campaign; previous campaigns are replaced',
     required: false,
   })
   @IsArray()
   @IsNumber({}, { each: true })
   @IsOptional()
   campaignIds?: number[];
+
+  @ApiProperty({
+    example: 5,
+    description:
+      'Voting booth ID. Superadmin/Admin can change the mesa of a Testigo electoral',
+    required: false,
+  })
+  @IsNumber()
+  @IsOptional()
+  votingBoothId?: number;
+
+  @ApiProperty({
+    example: 2,
+    description:
+      'Table number. Superadmin/Admin can change the mesa of a Testigo electoral',
+    required: false,
+  })
+  @IsNumber()
+  @IsOptional()
+  tableNumber?: number;
 }

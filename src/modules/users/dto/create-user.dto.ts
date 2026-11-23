@@ -46,12 +46,32 @@ export class CreateUserDto {
   organizationId?: number;
 
   @ApiProperty({
-    example: [1, 2, 3],
-    description: 'Campaign IDs to assign (optional)',
+    example: [1],
+    description:
+      'Campaign IDs to assign. Required with exactly one campaign for Director de campaña (7) and Testigo electoral (8)',
     required: false,
   })
   @IsArray()
   @IsNumber({}, { each: true })
   @IsOptional()
   campaignIds?: number[];
+
+  @ApiProperty({
+    example: 5,
+    description:
+      'Voting booth ID (required for Testigo electoral when assigning mesa)',
+    required: false,
+  })
+  @IsNumber()
+  @IsOptional()
+  votingBoothId?: number;
+
+  @ApiProperty({
+    example: 1,
+    description: 'Table number within the voting booth (for Testigo electoral)',
+    required: false,
+  })
+  @IsNumber()
+  @IsOptional()
+  tableNumber?: number;
 }

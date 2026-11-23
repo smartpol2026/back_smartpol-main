@@ -19,3 +19,6 @@ export { CampaignUser } from './campaign-user.entity';
 export { VotersHistory } from './voters-history.entity';
 export { Divipol } from './divipol.entity';
 export { PoliticalStatus } from './political-status.entity';
+export { WitnessTableAssignment } from './witness-table-assignment.entity';
+export { TableReport } from './table-report.entity';
+export { TableNovelty } from './table-novelty.entity';
