@@ -15,4 +15,10 @@ export class VotingBoothResponseDto {
 
   @ApiProperty({ example: 5 })
   mesas: number;
+
+  @ApiProperty({ example: 8.75, required: false, nullable: true })
+  latitude?: number | null;
+
+  @ApiProperty({ example: -75.88, required: false, nullable: true })
+  longitude?: number | null;
 }

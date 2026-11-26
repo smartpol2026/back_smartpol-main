@@ -63,7 +63,12 @@ export class AuthService {
     // Buscar usuario con relaciones
     const usuario = await this.userRepository.findOne({
       where: { email: loginDto.email },
-      relations: ['role', 'organization'],
+      relations: [
+        'role',
+        'organization',
+        'campaignUsers',
+        'campaignUsers.campaign',
+      ],
     });
 
     if (!usuario) {
@@ -88,6 +93,18 @@ export class AuthService {
       organizationName = usuario.organization?.name ?? null;
     }
 
+    const campaignIds = (usuario.campaignUsers || []).map(
+      (assignment) => assignment.campaignId,
+    );
+    const campaigns = (usuario.campaignUsers || [])
+      .map((assignment) => assignment.campaign)
+      .filter(Boolean)
+      .map((campaign) => ({
+        id: campaign.id,
+        name: campaign.name,
+        organizationId: campaign.organizationId,
+      }));
+
     // Generar JWT
     const accessToken = await this.generateToken(usuario);
     const refreshToken = await this.generateRefreshToken(usuario);
@@ -98,6 +115,8 @@ export class AuthService {
       roleId: usuario.role?.id ?? null,
       organizationId,
       organizationName,
+      campaignIds,
+      campaigns,
       access_token: accessToken,
       refresh_token: refreshToken,
       message: 'Login successful',
@@ -144,7 +163,12 @@ export class AuthService {
       // Get the user with relations
       const user = await this.userRepository.findOne({
         where: { id: payload.sub },
-        relations: ['role', 'organization'],
+        relations: [
+          'role',
+          'organization',
+          'campaignUsers',
+          'campaignUsers.campaign',
+        ],
       });
 
       if (!user) {
@@ -160,6 +184,18 @@ export class AuthService {
         organizationName = user.organization?.name ?? null;
       }
 
+      const campaignIds = (user.campaignUsers || []).map(
+        (assignment) => assignment.campaignId,
+      );
+      const campaigns = (user.campaignUsers || [])
+        .map((assignment) => assignment.campaign)
+        .filter(Boolean)
+        .map((campaign) => ({
+          id: campaign.id,
+          name: campaign.name,
+          organizationId: campaign.organizationId,
+        }));
+
       // Generate new access token
       const newAccessToken = await this.generateToken(user);
 
@@ -172,6 +208,8 @@ export class AuthService {
         roleId: user.role?.id ?? null,
         organizationId,
         organizationName,
+        campaignIds,
+        campaigns,
         access_token: newAccessToken,
         refresh_token: newRefreshToken,
         message: 'Token refreshed successfully',

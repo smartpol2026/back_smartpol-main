@@ -71,6 +71,11 @@ export class UserController {
   ): Promise<User> {
     const authUser = req.user;
 
+    await this.userService.assertCanCreateUserWithRole(
+      authUser?.roleId,
+      createUserDto.roleId,
+    );
+
     // Validar que candidatos (roleId=3) no puedan crear digitadores (roleId=5) ni especiales (roleId=6)
     if (
       authUser?.roleId === 3 &&
@@ -82,7 +87,10 @@ export class UserController {
       );
     }
 
-    return await this.userService.create(createUserDto);
+    return await this.userService.create(createUserDto, {
+      roleId: authUser?.roleId,
+      organizationId: authUser?.organizationId ?? null,
+    });
   }
 
   @Get()
@@ -142,7 +150,7 @@ export class UserController {
     }
 
     const pageNum = Math.max(1, parseInt(page, 10) || 1);
-    const limitNum = Math.max(1, parseInt(limit, 10) || 10);
+    const limitNum = Math.min(100, Math.max(1, parseInt(limit, 10) || 10));
 
     if (roleId) {
       return await this.userService.findByRoleWithPagination(
@@ -152,8 +160,11 @@ export class UserController {
         search,
       );
     }
-    // Si no hay roleId pero hay paginación, devolveremos los datos con la estructura de paginación
-    return await this.userService.findAll();
+    return await this.userService.findAllWithPagination(
+      pageNum,
+      limitNum,
+      search,
+    );
   }
 
   @Post('change-password')
@@ -246,8 +257,8 @@ export class UserController {
       },
     },
   })
-  async findOne(@Param('id') id: string): Promise<User | null> {
-    return await this.userService.findOne(+id);
+  async findOne(@Param('id') id: string) {
+    return await this.userService.findOnePublic(+id);
   }
 
   @Patch(':id')
@@ -291,8 +302,13 @@ export class UserController {
   async update(
     @Param('id') id: string,
     @Body() updateUserDto: UpdateUserDto,
+    @Request() req: any,
   ): Promise<User | null> {
-    return await this.userService.update(+id, updateUserDto);
+    const authUser = req.user;
+    return await this.userService.update(+id, updateUserDto, {
+      roleId: authUser?.roleId,
+      organizationId: authUser?.organizationId ?? null,
+    });
   }
 
   @Delete(':id')
@@ -339,8 +355,13 @@ export class UserController {
   assignUserToCampaign(
     @Param('userId') userId: string,
     @Param('campaignId') campaignId: string,
+    @Request() req: any,
   ) {
-    return this.userService.assignUserToCampaigns(+userId, [+campaignId]);
+    const authUser = req.user;
+    return this.userService.assignUserToCampaign(+userId, +campaignId, {
+      roleId: authUser?.roleId,
+      organizationId: authUser?.organizationId ?? null,
+    });
   }
 
   @Delete(':userId/campaigns/:campaignId')
