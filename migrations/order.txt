@@ -1,0 +1,64 @@
+# Orden de ejecución de las migraciones.
+# El runner (scripts/migrations.js) usa este orden y NO el alfabético.
+# Regla: si un archivo usa una tabla, datos o permisos creados por otro,
+# el otro debe ir antes. "migration:lint" valida las tablas automáticamente.
+# Cada archivo debe aparecer exactamente una vez.
+#
+# "!legacy" = migración ORIGINAL (commit inicial de Smart Pol), anterior al runner
+# y ya aplicada en producción. El runner solo la REGISTRA en sql_migrations,
+# NUNCA ejecuta su SQL. Esos archivos se dejan sin modificar.
+
+# --- 1. Limpieza y cambios independientes ---
+cleanup-duplicate-users.sql !legacy
+remove-unique-userId-from-leaders.sql !legacy
+add-color-to-candidates.sql
+add-color-to-organizations.sql
+remove-color-from-organizations.sql
+add-indexes-candidate-voter.sql !legacy
+alter-voting-booths-add-mesas.sql !legacy
+add-has-voted-to-voters.sql !legacy
+remove-unique-identification-voters.sql !legacy
+remove-voting-table-fk.sql !legacy
+change-voting-table-id-type.sql !legacy
+insert-corporations.sql
+
+# --- 2. Historial de votantes ---
+create-voters-history-table.sql !legacy
+fix-voters-history-on-delete.sql !legacy
+add-created-by-user-to-voters.sql !legacy
+update-voters-set-created-by-userid.sql !legacy
+add-created-by-user-to-voters-history.sql
+create-political-statuses-and-link-voters.sql
+dedup-voters-history-upsert-trigger.sql
+restore-voters-history-upsert-trigger.sql
+
+# --- 3. Roles y permisos ---
+create-roles-table.sql !legacy
+fix-corrupted-role-names-encoding.sql
+add-role-id-to-users.sql !legacy
+create-permissions-tables.sql !legacy
+ensure-user-permissions-table.sql !legacy
+insert-permissions.sql !legacy
+add-missing-permissions.sql !legacy
+add-dashboard-permissions.sql !legacy
+create-special-user-role.sql !legacy
+assign-permissions-to-roles.sql !legacy
+separate-read-manage-permissions.sql !legacy
+update-digitador-permissions.sql !legacy
+
+# --- 4. Usuarios de semilla ---
+insert-admin-users.sql !legacy
+fix-admin-roles.sql !legacy
+insert-candidate-users.sql !legacy
+add-userId-to-candidates.sql !legacy
+update-candidate-passwords.sql !legacy
+insert-leaders-users.sql !legacy
+add-userId-to-leaders.sql !legacy
+
+# --- 5. Día D ---
+add-campaign-director-and-electoral-witness-roles.sql
+add-election-day-tables.sql
+add-table-report-evidence-file-fields.sql
+add-voting-booth-coordinates-and-admin-control-board.sql
+assign-permissions-to-campaign-director-and-electoral-witness.sql
+revoke-election-day-view-permissions-from-superadmin.sql

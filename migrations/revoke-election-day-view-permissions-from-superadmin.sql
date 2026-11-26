@@ -1,8 +1,5 @@
 -- Superadmin solo crea Director/Testigo; no opera Mi mesa ni Tablero.
 -- Quita permisos de vistas Día D del rol 1 (ya asignados en migración previa).
-
-BEGIN;
-
 DELETE FROM role_permissions
 WHERE "roleId" = 1
   AND "permissionId" IN (
@@ -16,9 +13,6 @@ WHERE "roleId" = 1
       'novelties:create'
     )
   );
-
-COMMIT;
-
 -- Verificación: Superadmin (1) no debe aparecer
 SELECT r.id AS role_id, r.name AS role_name, p.name AS permission_name
 FROM roles r

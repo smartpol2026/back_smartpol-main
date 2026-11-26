@@ -1,5 +1,3 @@
-BEGIN;
-
 DO $$
 BEGIN
     IF EXISTS (
@@ -48,9 +46,6 @@ SELECT setval(
     (SELECT MAX(id) FROM roles),
     true
 );
-
-COMMIT;
-
 -- Verificación
 SELECT id, name, description
 FROM roles

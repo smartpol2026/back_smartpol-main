@@ -19,11 +19,16 @@ ON CONFLICT (name) DO NOTHING;
 ALTER TABLE voters
 ADD COLUMN IF NOT EXISTS "politicalStatusId" INTEGER;
 
-ALTER TABLE voters
-ADD CONSTRAINT fk_voters_political_status
-FOREIGN KEY ("politicalStatusId")
-REFERENCES political_statuses(id)
-ON DELETE SET NULL;
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_voters_political_status') THEN
+    ALTER TABLE voters
+    ADD CONSTRAINT fk_voters_political_status
+    FOREIGN KEY ("politicalStatusId")
+    REFERENCES political_statuses(id)
+    ON DELETE SET NULL;
+  END IF;
+END $$;
 
 -- Keep history aligned with main voter fields
 ALTER TABLE voters_history

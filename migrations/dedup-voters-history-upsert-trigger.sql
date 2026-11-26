@@ -6,8 +6,8 @@
 
 -- 0. Respaldo de seguridad
 -- ---------------------------------------------------------------------
-DROP TABLE IF EXISTS voters_history_backup;
-CREATE TABLE voters_history_backup AS SELECT * FROM voters_history;
+-- Keep the FIRST backup (re-running must not overwrite it with already-deduplicated data)
+CREATE TABLE IF NOT EXISTS voters_history_backup AS SELECT * FROM voters_history;
 
 -- ---------------------------------------------------------------------
 -- 1. Limpieza de duplicado
@@ -22,7 +22,7 @@ WHERE vh.identification = vh2.identification
 --     Reemplaza el indice normal anterior (idx_voters_history_identification)
 -- ---------------------------------------------------------------------
 DROP INDEX IF EXISTS idx_voters_history_identification;
-CREATE UNIQUE INDEX ux_voters_history_identification
+CREATE UNIQUE INDEX IF NOT EXISTS ux_voters_history_identification
     ON public.voters_history(identification);
 
 -- ---------------------------------------------------------------------

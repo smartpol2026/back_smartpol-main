@@ -1,8 +1,5 @@
 -- Permisos y asignación para Director de campaña (7) y Testigo electoral (8).
 -- No recrea tablas: solo inserta permissions y role_permissions.
-
-BEGIN;
-
 INSERT INTO permissions (name, resource, action, description) VALUES
     ('voting:access', 'voting', 'access', 'Acceso a la operación de Día D'),
     ('control-board:read', 'control-board', 'read', 'Ver el tablero de control electoral'),
@@ -41,9 +38,6 @@ WHERE p.name IN (
     'novelties:create'
 )
 ON CONFLICT ("roleId", "permissionId") DO NOTHING;
-
-COMMIT;
-
 -- Verificación
 SELECT r.id AS role_id, r.name AS role_name, p.name AS permission_name
 FROM roles r
