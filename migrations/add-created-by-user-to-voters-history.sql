@@ -1,9 +1,10 @@
 -- Add createdByUserId column to voters_history table
 ALTER TABLE public.voters_history
-ADD COLUMN "createdByUserId" integer;
+ADD COLUMN IF NOT EXISTS "createdByUserId" integer;
 
 -- Create index for faster queries
-CREATE INDEX idx_voters_history_created_by_user_id ON public.voters_history("createdByUserId");
+CREATE INDEX IF NOT EXISTS idx_voters_history_created_by_user_id
+ON public.voters_history("createdByUserId");
 
 -- Drop existing trigger and function to update them
 DROP TRIGGER IF EXISTS trigger_log_new_voter ON public.voters;
