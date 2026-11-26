@@ -14,6 +14,7 @@
     "start:prod": "node dist/main",
     "migration:run": "node scripts/migrations.js run",
     "migration:status": "node scripts/migrations.js status",
+    "migration:lint": "node scripts/migrations.js lint",
     "migration:create": "node scripts/migrations.js create",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
     "test": "jest",

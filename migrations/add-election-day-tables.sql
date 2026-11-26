@@ -1,8 +1,5 @@
 -- Modelo base de operación Día D con aislamiento por campaña.
 -- Director y Testigo solo consultan datos de su campaña asignada en campaign_users.
-
-BEGIN;
-
 CREATE TABLE IF NOT EXISTS witness_table_assignments (
     id SERIAL PRIMARY KEY,
     "userId" INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -52,5 +49,3 @@ CREATE INDEX IF NOT EXISTS idx_table_novelties_campaign ON table_novelties("camp
 CREATE INDEX IF NOT EXISTS idx_table_novelties_booth_table ON table_novelties("votingBoothId", "tableNumber");
 CREATE INDEX IF NOT EXISTS idx_table_novelties_severity ON table_novelties(severity);
 CREATE INDEX IF NOT EXISTS idx_table_novelties_created_at ON table_novelties("createdAt");
-
-COMMIT;
