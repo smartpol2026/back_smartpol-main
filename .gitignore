@@ -10,6 +10,10 @@ node_modules/
 /out
 *.tsbuildinfo
 
+# Uploaded evidence files (photos/videos)
+/uploads
+!/uploads/.gitkeep
+
 # Environment & secrets (keep only .env.example)
 .env
 .env.*

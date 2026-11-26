@@ -442,6 +442,58 @@ export class UserService {
     return load();
   }
 
+  async findAllWithPagination(
+    page: number = 1,
+    limit: number = 10,
+    search?: string,
+  ) {
+    const skip = (page - 1) * limit;
+    const query = this.userRepository
+      .createQueryBuilder('user')
+      .select('user.id', 'id');
+
+    if (search?.trim()) {
+      query.where('LOWER(user.email) LIKE LOWER(:search)', {
+        search: `%${search.trim()}%`,
+      });
+    }
+
+    const total = await query.getCount();
+    const idRows = await query
+      .orderBy('user.id', 'DESC')
+      .offset(skip)
+      .limit(limit)
+      .getRawMany<{ id: number }>();
+    const ids = idRows.map((row) => Number(row.id));
+
+    if (!ids.length) {
+      return {
+        data: [],
+        total,
+        page,
+        limit,
+        pages: Math.ceil(total / limit) || 0,
+      };
+    }
+
+    const users = await this.userRepository.find({
+      where: { id: In(ids) },
+      relations: ['role', 'campaignUsers', 'campaignUsers.campaign'],
+    });
+    const usersById = new Map(users.map((user) => [user.id, user]));
+    const orderedUsers = ids
+      .map((id) => usersById.get(id))
+      .filter((user): user is User => !!user);
+
+    return {
+      data: await this.toPublicUsers(orderedUsers),
+      total,
+      page,
+      limit,
+      pages: Math.ceil(total / limit) || 0,
+    };
+  }
+
   async findByRoleWithPagination(
     roleId: number,
     page: number = 1,

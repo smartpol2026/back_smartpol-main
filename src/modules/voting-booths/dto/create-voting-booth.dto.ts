@@ -1,4 +1,11 @@
-import { IsString, IsNumber, IsNotEmpty, IsOptional } from 'class-validator';
+import {
+  IsString,
+  IsNumber,
+  IsNotEmpty,
+  IsOptional,
+  Min,
+  Max,
+} from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateVotingBoothDto {
@@ -21,4 +28,18 @@ export class CreateVotingBoothDto {
   @IsNotEmpty()
   @IsNumber()
   mesas: number;
+
+  @ApiProperty({ example: 8.75, required: false })
+  @IsOptional()
+  @IsNumber()
+  @Min(-90)
+  @Max(90)
+  latitude?: number;
+
+  @ApiProperty({ example: -75.88, required: false })
+  @IsOptional()
+  @IsNumber()
+  @Min(-180)
+  @Max(180)
+  longitude?: number;
 }

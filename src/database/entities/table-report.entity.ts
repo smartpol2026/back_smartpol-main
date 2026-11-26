@@ -45,8 +45,22 @@ export class TableReport {
   @Column({ type: 'text', nullable: true })
   observations: string | null;
 
+  /** URL pública de descarga (API) o externa legacy */
   @Column({ type: 'text', nullable: true })
   evidenceUrl: string | null;
+
+  /** Ruta relativa dentro de /uploads */
+  @Column({ type: 'text', nullable: true })
+  evidencePath: string | null;
+
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  evidenceOriginalName: string | null;
+
+  @Column({ type: 'varchar', length: 100, nullable: true })
+  evidenceMimeType: string | null;
+
+  @Column({ type: 'bigint', nullable: true })
+  evidenceSizeBytes: number | null;
 
   @Column()
   createdByUserId: number;

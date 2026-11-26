@@ -150,7 +150,7 @@ export class UserController {
     }
 
     const pageNum = Math.max(1, parseInt(page, 10) || 1);
-    const limitNum = Math.max(1, parseInt(limit, 10) || 10);
+    const limitNum = Math.min(100, Math.max(1, parseInt(limit, 10) || 10));
 
     if (roleId) {
       return await this.userService.findByRoleWithPagination(
@@ -160,8 +160,11 @@ export class UserController {
         search,
       );
     }
-    // Si no hay roleId pero hay paginación, devolveremos los datos con la estructura de paginación
-    return await this.userService.findAll();
+    return await this.userService.findAllWithPagination(
+      pageNum,
+      limitNum,
+      search,
+    );
   }
 
   @Post('change-password')
